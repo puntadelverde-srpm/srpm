@@ -3,9 +3,9 @@ package org.srpm.model;
 public class Resumen {
     private String titular;
     private String cuerpo;
-    private long id;
+    private Integer id;
 
-    public Resumen(String titular, String cuerpo, long id) {
+    public Resumen(String titular, String cuerpo, Integer id) {
         this.titular = titular;
         this.cuerpo = cuerpo;
         this.id = id;
@@ -27,11 +27,11 @@ public class Resumen {
         this.cuerpo = cuerpo;
     }
 
-    public long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 }
