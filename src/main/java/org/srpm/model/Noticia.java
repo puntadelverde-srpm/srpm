@@ -1,57 +1,36 @@
 package org.srpm.model;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class Noticia {
-    private long id=0;
-    private String fuente;
+
+    private long id;
+    private String fuente; // "COPE" o "20minutos"
     private String titular;
     private String linkNoticia;
-    private LocalDate fecha;
+    private String contenido; // El resumen (<description> o <content>)
+    private LocalDateTime fecha;
 
-    public Noticia(String fuente, String titular, String linkNoticia, LocalDate fecha) {
-        this.fuente = fuente;
-        this.titular = titular;
-        this.linkNoticia = linkNoticia;
-        this.id++;
-        this.fecha = fecha;
-    }
 
-    public long getId() {
-        return id;
-    }
+    public Noticia() {}
 
-    public void setId(long id) {
-        this.id = id;
-    }
+    // --- Getters y Setters para todos los campos ---
 
-    public String getFuente() {
-        return fuente;
-    }
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
 
-    public void setFuente(String fuente) {
-        this.fuente = fuente;
-    }
+    public String getFuente() { return fuente; }
+    public void setFuente(String fuente) { this.fuente = fuente; }
 
-    public String getTitular() {
-        return titular;
-    }
+    public String getTitular() { return titular; }
+    public void setTitular(String titular) { this.titular = titular; }
 
-    public void setTitular(String titular) {
-        this.titular = titular;
-    }
+    public String getLinkNoticia() { return linkNoticia; }
+    public void setLinkNoticia(String linkNoticia) { this.linkNoticia = linkNoticia; }
 
-    public String getLinkNoticia() {
-        return linkNoticia;
-    }
+    public String getContenido() { return contenido; }
+    public void setContenido(String contenido) { this.contenido = contenido; }
 
-    public void setLinkNoticia(String linkNoticia) {
-        this.linkNoticia = linkNoticia;
-    }
-    public LocalDate getFecha() {
-        return fecha;
-    }
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
-    }
+    public LocalDateTime getFecha() { return fecha; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
 }
