@@ -21,10 +21,6 @@ public class NoticiaDaoEnMemoria implements NoticiaDAO {
 
     private final AtomicLong idCounter = new AtomicLong(1);
 
-    @Override
-    public Optional<Noticia> findByLinkNoticia(String linkNoticia) {
-        return Optional.ofNullable(noticiasPorLink.get(linkNoticia));
-    }
 
     @Override
     public void save(Noticia noticia) {
@@ -58,5 +54,13 @@ public class NoticiaDaoEnMemoria implements NoticiaDAO {
     @Override
     public Optional<Noticia> findById(Long id) {
         return Optional.ofNullable(noticiasPorId.get(id));
+    }
+    /**
+     * Busca una noticia por su Link (Identificador único en el RSS).
+     */
+
+    @Override
+    public Optional<Noticia> findByLinkNoticia(String linkNoticia) {
+        return Optional.ofNullable(noticiasPorLink.get(linkNoticia));
     }
 }
