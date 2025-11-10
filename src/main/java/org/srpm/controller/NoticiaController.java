@@ -28,6 +28,27 @@ public class NoticiaController {
         this.parserService = parserService;
     }
 
+
+    /**
+     * Endpoint para que el frontend dispare la actualización de los RSS.
+     * URL: POST http://localhost:8080/api/noticias/actualizar?limite=3
+     * * **CAMBIO MINIMO:** Se añade el parámetro `@RequestParam` con un valor por defecto.
+     */
+    @PostMapping("/actualizar")
+    public ResponseEntity<String> triggerUpdate(
+            @RequestParam(name = "limite", required = false, defaultValue = "" + LIMITE_POR_DEFECTO) int limite
+    ) {
+        // **CAMBIO MINIMO:** Se pasa el parámetro al servicio.
+        String resumen = parserService.fetchAllFeeds(limite);
+
+        return ResponseEntity.ok(resumen);
+    }
+
+
+
+
+
+
     // ... (getTodasLasNoticias y getNoticiasPorFuente se mantienen igual) ...
     @GetMapping
     public List<Noticia> getTodasLasNoticias() {
@@ -44,20 +65,5 @@ public class NoticiaController {
             }
         }
         return noticiasFiltradas;
-    }
-
-    /**
-     * Endpoint para que el frontend dispare la actualización de los RSS.
-     * URL: POST http://localhost:8080/api/noticias/actualizar?limite=3
-     * * **CAMBIO MINIMO:** Se añade el parámetro `@RequestParam` con un valor por defecto.
-     */
-    @PostMapping("/actualizar")
-    public ResponseEntity<String> triggerUpdate(
-            @RequestParam(name = "limite", required = false, defaultValue = "" + LIMITE_POR_DEFECTO) int limite
-    ) {
-        // **CAMBIO MINIMO:** Se pasa el parámetro al servicio.
-        String resumen = parserService.fetchAllFeeds(limite);
-
-        return ResponseEntity.ok(resumen);
     }
 }

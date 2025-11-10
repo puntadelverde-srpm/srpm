@@ -1,9 +1,9 @@
 package org.srpm.service;
 
 import com.rometools.rome.feed.synd.SyndEntry;
-// ... (otras importaciones)
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
+import com.rometools.rome.io.XmlReader;
 import org.srpm.dao.NoticiaDAO;
 import org.srpm.model.Noticia;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,15 +16,21 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * @Service indica a Spring que esta clase es un "Servicio".
+ */
 @Service
 public class RssParserService {
 
     /**
-     * **CAMBIO MINIMO:** Se ELIMINA la constante, ya que se recibirá por parámetro.
+     * **CAMBIO:** Se ELIMINA la constante LIMITE_NOTICIAS_POR_FEED,
+     * ya que ahora se recibirá como parámetro desde el controlador.
      */
     // private static final int LIMITE_NOTICIAS_POR_FEED = 5;
 
-    // ... (Clase interna FeedSource y lista 'feeds' se mantienen igual) ...
+    /**
+     * Clase interna privada para almacenar el nombre y la URL de un feed.
+     */
     private static class FeedSource {
         private final String nombre;
         private final String url;
@@ -38,6 +44,9 @@ public class RssParserService {
         public String getUrl() { return url; }
     }
 
+    /**
+     * Aquí definimos la lista de todas las fuentes RSS que queremos leer.
+     */
     private final List<FeedSource> feeds = List.of(
             new FeedSource("20minutos", "https://www.20minutos.es/rss/"),
             new FeedSource("COPE", "https://www.cope.es/api/es/news/rss.xml"),
@@ -52,14 +61,15 @@ public class RssParserService {
     }
 
     /**
-     * **CAMBIO MINIMO:** Se añade `limiteNoticiasPorFeed` como parámetro.
+     * Método principal que llama la API.
+     * **MODIFICACIÓN:** Acepta el límite como parámetro.
      */
     public String fetchAllFeeds(int limiteNoticiasPorFeed) {
         System.out.println("--- [PETICIÓN API] Iniciando lectura de RSS con límite: " + limiteNoticiasPorFeed + " ---");
         int totalNuevas = 0;
 
         for (FeedSource feed : feeds) {
-            // **CAMBIO MINIMO:** Se pasa el límite al método privado.
+            // Se pasa el límite al método de parsing
             int nuevas = parseAndSaveFeed(feed.getUrl(), feed.getNombre(), limiteNoticiasPorFeed);
             System.out.println("Fuente: " + feed.getNombre() + " - Noticias nuevas: " + nuevas);
             totalNuevas += nuevas;
@@ -71,27 +81,57 @@ public class RssParserService {
     }
 
     /**
-     * **CAMBIO MINIMO:** Se añade `limiteNoticiasPorFeed` como parámetro.
+     * Lee una URL de RSS, la procesa y guarda las noticias nuevas en la BBDD.
+     * **MODIFICACIÓN:** Acepta el límite como parámetro.
      */
     private int parseAndSaveFeed(String feedUrl, String sourceName, int limiteNoticiasPorFeed) {
         int noticiasNuevasContador = 0;
 
-        try (var reader = new com.rometools.rome.io.XmlReader(new URL(feedUrl))) {
+        try (var reader = new XmlReader(new URL(feedUrl))) {
 
             SyndFeed feed = new SyndFeedInput().build(reader);
             List<SyndEntry> todasLasNoticiasDelFeed = feed.getEntries();
 
             // Aplicar el límite
             int totalNoticiasEnFeed = todasLasNoticiasDelFeed.size();
-            // **CAMBIO MINIMO:** Se usa el parámetro en lugar de la constante.
+            // **MODIFICACIÓN:** Usar el parámetro en lugar de la constante
             int limiteReal = Math.min(totalNoticiasEnFeed, limiteNoticiasPorFeed);
             List<SyndEntry> noticiasLimitadas = todasLasNoticiasDelFeed.subList(0, limiteReal);
 
-            // ... (El resto del método se mantiene igual) ...
             System.out.println("Fuente: " + sourceName + " - Encontradas " + totalNoticiasEnFeed + ", procesando " + limiteReal);
 
             for (SyndEntry entry : noticiasLimitadas) {
-                // ... (lógica de guardado se mantiene igual) ...
+
+                String link = entry.getLink();
+                if (link == null) {
+                    continue;
+                }
+
+                // Evitar duplicados
+                if (noticiaDAO.findByLinkNoticia(link).isEmpty()) {
+
+                    noticiasNuevasContador++;
+
+                    Noticia nuevaNoticia = new Noticia();
+                    nuevaNoticia.setLinkNoticia(link);
+                    nuevaNoticia.setFuente(sourceName);
+
+                    // Limpiamos el titular
+                    nuevaNoticia.setTitular(limpiarHtml(entry.getTitle()));
+
+                    // Extraemos y limpiamos el contenido
+                    String contenidoHtml = extraerContenido(entry);
+                    nuevaNoticia.setContenido(limpiarHtml(contenidoHtml));
+
+                    // Convertir la fecha
+                    if (entry.getPublishedDate() != null) {
+                        nuevaNoticia.setFecha(entry.getPublishedDate().toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDateTime());
+                    }
+
+                    noticiaDAO.save(nuevaNoticia);
+                }
             }
 
         } catch (Exception e) {
@@ -102,8 +142,9 @@ public class RssParserService {
         return noticiasNuevasContador;
     }
 
-    // ... (Los métodos 'extraerContenido' y 'limpiarHtml' se mantienen totalmente igual) ...
-
+    /**
+     * Método de ayuda (privado) para encontrar el contenido de la noticia.
+     */
     private String extraerContenido(SyndEntry entry) {
         if (entry.getContents() != null && !entry.getContents().isEmpty()) {
             return entry.getContents().get(0).getValue();
@@ -114,10 +155,16 @@ public class RssParserService {
         return null;
     }
 
+
+    /**
+     * Método de ayuda para limpiar el HTML y otros caracteres no deseados.
+     */
     private String limpiarHtml(String html) {
         if (html == null) {
             return null;
         }
+
+
 
         String texto = HtmlUtils.htmlUnescape(html);
 

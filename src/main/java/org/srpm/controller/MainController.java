@@ -1,9 +1,13 @@
 package org.srpm.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.srpm.dao.NoticiaDAO;
+import org.srpm.dao.NoticiaDaoEnMemoria;
 import org.srpm.model.Resumen;
+import org.srpm.service.RssParserService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,12 +21,18 @@ public class MainController {
     private final AtomicInteger idCounter = new AtomicInteger(0);
 
 
-    public MainController() {
+    private final NoticiaDaoEnMemoria noticiaDaoEnMemoria;
+    private final RssParserService rssParserService;
 
-        // AQUI ES DONDE SE METERIAN LOS RESUMENES REALES
 
-        resumenes.add(new Resumen("Mazón dimite", "blabkaabalbsbalba", idCounter.getAndIncrement()));
-        resumenes.add(new Resumen("Mazón dimite2", "blabkaabalbsbalba", idCounter.getAndIncrement()));
+
+    @Autowired
+    public MainController(NoticiaDaoEnMemoria noticiaDaoEnMemoria, RssParserService rssParserService) {
+
+        this.noticiaDaoEnMemoria = noticiaDaoEnMemoria;
+        this.rssParserService = new RssParserService(noticiaDaoEnMemoria);
+
+        rssParserService.parseAndSaveFeed(noticiaDaoEnMemoria);
     }
 
 
