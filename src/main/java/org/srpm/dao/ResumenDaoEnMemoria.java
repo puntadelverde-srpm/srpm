@@ -29,6 +29,11 @@ public class ResumenDaoEnMemoria implements ResumenDAO{
         resumenPorId.put(resumen.getId(), resumen);
     }
 
+    @Override
+    public void deleteById(Long id) {
+        resumenPorId.remove(id);
+    }
+
     /**
      * Devuelve todas las noticias que tenemos guardadas.
      */

@@ -12,6 +12,8 @@ public interface ResumenDAO {
      */
     void save(Resumen resumen);
 
+    void deleteById(Long id);
+
     /**
      * Devuelve todas las noticias que tenemos guardadas.
      */

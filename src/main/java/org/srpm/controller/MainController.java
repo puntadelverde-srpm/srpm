@@ -3,11 +3,13 @@ package org.srpm.controller;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.server.ResponseStatusException;
 import org.srpm.dao.NoticiaDaoEnMemoria;
 import org.srpm.dao.ResumenDaoEnMemoria;
 import org.srpm.model.Noticia;
@@ -17,6 +19,7 @@ import org.srpm.service.RssParserService;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/resumenes")
@@ -59,7 +62,7 @@ public class MainController {
         System.out.println("Iniciando procesamiento de datos y llamada a API externa...");
 
         // 1. Ejecutar el parseo de RSS
-        rssParserService.fetchAllFeeds(10);
+        rssParserService.fetchAllFeeds(20);
 
         // 2. Obtener las noticias
         List<Noticia> noticias = noticiaDaoEnMemoria.findAll();
@@ -108,5 +111,27 @@ public class MainController {
     @GetMapping
     public List<Resumen> getAll() {
         return resumenDaoEnMemoria.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public Resumen getById(@PathVariable Long id) {
+
+        return resumenDaoEnMemoria.findById(id).get();
+    }
+
+    @PostMapping
+    public Resumen create(@RequestBody Resumen resumen) {
+        resumenDaoEnMemoria.save(resumen);
+        return resumen;
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+
+        if (resumenDaoEnMemoria.findById(id).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resumen no encontrado");
+        }
+        resumenDaoEnMemoria.deleteById(id);
     }
 }
