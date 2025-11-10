@@ -15,7 +15,7 @@ import java.util.Optional;
  * de los objetos Noticia completos.
  */
 @RestController
-@RequestMapping("/api/v1/noticias-agrupadas")
+@RequestMapping("/api/noticias-agrupadas")
 @CrossOrigin(origins = "*") // Habilita CORS igual que en el otro controlador
 public class NoticiaAgrupadaController {
 
