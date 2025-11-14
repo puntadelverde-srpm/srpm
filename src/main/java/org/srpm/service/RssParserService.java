@@ -4,14 +4,15 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import jakarta.annotation.PostConstruct;
 import org.srpm.dao.NoticiaDAO;
 import org.srpm.model.Noticia;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 import java.net.URL;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -22,56 +23,82 @@ import java.util.regex.Pattern;
 @Service
 public class RssParserService {
 
-    /**
-     * **CAMBIO:** Se ELIMINA la constante LIMITE_NOTICIAS_POR_FEED,
-     * ya que ahora se recibirá como parámetro desde el controlador.
-     */
-    // private static final int LIMITE_NOTICIAS_POR_FEED = 5;
+    // 1. Inyectamos las URLs desde el archivo de propiedades
+    @Value("${rss.url.20minutos}")
+    private String url20Minutos;
+
+    @Value("${rss.url.cope}")
+    private String urlCope;
+
+    @Value("${rss.url.eldiario}")
+    private String urlElDiario;
 
     /**
-     * Clase interna privada para almacenar el nombre y la URL de un feed.
+     * Esta es la lista de fuentes.
+     * IMPORTANTE: No la inicializamos aquí, porque las URLs de arriba
+     * todavía serían 'null'. La inicializaremos en el método @PostConstruct.
      */
-    private static class FeedSource {
-        private final String nombre;
-        private final String url;
-
-        public FeedSource(String nombre, String url) {
-            this.nombre = nombre;
-            this.url = url;
-        }
-
-        public String getNombre() { return nombre; }
-        public String getUrl() { return url; }
-    }
-
-    /**
-     * Aquí definimos la lista de todas las fuentes RSS que queremos leer.
-     */
-    private final List<FeedSource> feeds = List.of(
-            new FeedSource("20minutos", "https://www.20minutos.es/rss/"),
-            new FeedSource("COPE", "https://www.cope.es/api/es/news/rss.xml"),
-            new FeedSource("elDiario", "https://www.eldiario.es/rss/")
-    );
+    private List<FeedSource> feeds;
 
     private final NoticiaDAO noticiaDAO;
 
+    //Record para FeedSource
+    private record FeedSource(String nombre, String url) { }
+
+    /**
+     * Constructor: Spring nos da el NoticiaDAO.
+     * Ya no le pedimos las URLs aquí, porque era demasiado pronto.
+     */
     @Autowired
     public RssParserService(NoticiaDAO noticiaDAO) {
         this.noticiaDAO = noticiaDAO;
+        System.out.println(": RssParserService CONSTRUIDO. Las URLs aún son null.");
     }
 
     /**
+     * @PostConstruct le dice a Spring: "Espera a que hayas inyectado TODOS
+     * los valores (como las URLs del @Value), y SÓLO ENTONCES, ejecuta este método".
+     * Esto asegura que 'url20Minutos' y las demás YA TIENEN VALOR
+     * y no son 'null' cuando creamos la lista 'feeds'.
+     */
+    @PostConstruct
+    public void inicializarFuentes() {
+        System.out.println("============================================================");
+        System.out.println("DEBUG: Ejecutando @PostConstruct para cargar URLs...");
+        System.out.println("DEBUG - 20minutos: " + url20Minutos);
+        System.out.println("DEBUG - COPE: " + urlCope);
+        System.out.println("DEBUG - elDiario: " + urlElDiario);
+
+        // 2. Ahora sí creamos la lista, porque las URLs ya no son null
+        this.feeds = List.of(
+                new FeedSource("20minutos", url20Minutos),
+                new FeedSource("COPE", urlCope),
+                new FeedSource("elDiario", urlElDiario)
+        );
+
+        System.out.println("DEBUG: ¡Lista de 'feeds' creada! (" + feeds.size() + " fuentes)");
+        System.out.println("============================================================");
+    }
+
+
+    /**
      * Método principal que llama la API.
-     * **MODIFICACIÓN:** Acepta el límite como parámetro.
+     * (Este método no cambia)
      */
     public String fetchAllFeeds(int limiteNoticiasPorFeed) {
         System.out.println("--- [PETICIÓN API] Iniciando lectura de RSS con límite: " + limiteNoticiasPorFeed + " ---");
         int totalNuevas = 0;
 
+        // Comprobación por si algo falló en PostConstruct
+        if (feeds == null || feeds.isEmpty()) {
+            System.err.println("¡¡ERROR GRAVE!! La lista de feeds está vacía. Revisa @PostConstruct y application.properties.");
+            return "Error: Lista de feeds no inicializada.";
+        }
+
         for (FeedSource feed : feeds) {
             // Se pasa el límite al método de parsing
-            int nuevas = parseAndSaveFeed(feed.getUrl(), feed.getNombre(), limiteNoticiasPorFeed);
-            System.out.println("Fuente: " + feed.getNombre() + " - Noticias nuevas: " + nuevas);
+            int nuevas = parseAndSaveFeed(feed.url(), feed.nombre(), limiteNoticiasPorFeed);
+            System.out.println("Fuente: " + feed.nombre() + " - Noticias nuevas: " + nuevas);
             totalNuevas += nuevas;
         }
 
@@ -82,11 +109,12 @@ public class RssParserService {
 
     /**
      * Lee una URL de RSS, la procesa y guarda las noticias nuevas en la BBDD.
-     * **MODIFICACIÓN:** Acepta el límite como parámetro.
+     * (Este método no cambia)
      */
     private int parseAndSaveFeed(String feedUrl, String sourceName, int limiteNoticiasPorFeed) {
         int noticiasNuevasContador = 0;
 
+        // feedUrl ya no será 'null' gracias al @PostConstruct
         try (var reader = new XmlReader(new URL(feedUrl))) {
 
             SyndFeed feed = new SyndFeedInput().build(reader);
@@ -94,7 +122,6 @@ public class RssParserService {
 
             // Aplicar el límite
             int totalNoticiasEnFeed = todasLasNoticiasDelFeed.size();
-            // **MODIFICACIÓN:** Usar el parámetro en lugar de la constante
             int limiteReal = Math.min(totalNoticiasEnFeed, limiteNoticiasPorFeed);
             List<SyndEntry> noticiasLimitadas = todasLasNoticiasDelFeed.subList(0, limiteReal);
 
@@ -144,6 +171,7 @@ public class RssParserService {
 
     /**
      * Método de ayuda (privado) para encontrar el contenido de la noticia.
+     * (Este método no cambia)
      */
     private String extraerContenido(SyndEntry entry) {
         if (entry.getContents() != null && !entry.getContents().isEmpty()) {
@@ -158,13 +186,12 @@ public class RssParserService {
 
     /**
      * Método de ayuda para limpiar el HTML y otros caracteres no deseados.
+     * (Este método no cambia)
      */
     private String limpiarHtml(String html) {
         if (html == null) {
             return null;
         }
-
-
 
         String texto = HtmlUtils.htmlUnescape(html);
 

@@ -5,6 +5,8 @@ public class Resumen {
     private String cuerpo;
     private Long id;
 
+    public Resumen() {}
+
     public Resumen(String titular, String cuerpo, Long id) {
         this.titular = titular;
         this.cuerpo = cuerpo;
