@@ -15,8 +15,12 @@ const inputId = document.getElementById('resumen-id');
 const inputTitular = document.getElementById('resumen-titular');
 const inputCuerpo = document.getElementById('resumen-cuerpo');
 const btnNuevo = document.getElementById('btn-nuevo');
+const btnRefrescar = document.getElementById('btn-refrescar');
 
 let resumenes = []; // cache local
+
+
+
 
 function showAlert(message, type = "info", timeout = 4000) {
     const wrapper = document.createElement('div');
@@ -118,6 +122,10 @@ btnNuevo.addEventListener('click', () => {
     document.getElementById('modalEditarTitle').textContent = "Nuevo resumen";
     modalEditar.show();
 });
+
+btnRefrescar.addEventListener('click', () => {
+    loadResumenes();
+})
 
 /* Abrir modal para edición: precarga datos */
 window.openEdit = function(id) {
