@@ -20,8 +20,6 @@ public class ResumenDaoEnMemoria implements ResumenDAO{
     @Override
     public void save(Resumen resumen) {
 
-        // --- ¡¡AQUÍ ESTÁ EL ARREGLO!! ---
-        // Volvemos a comprobar si es '0' (el valor por defecto de 'long')
         if (resumen.getId()==null|| resumen.getId() == 0L) { // 0L es más explícito para tipo 'long'
             resumen.setId(idCounter.getAndIncrement());
         }
