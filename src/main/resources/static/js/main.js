@@ -15,6 +15,7 @@ const inputId = document.getElementById('resumen-id');
 const inputTitular = document.getElementById('resumen-titular');
 const inputCuerpo = document.getElementById('resumen-cuerpo');
 const btnNuevo = document.getElementById('btn-nuevo');
+const btnRefrescar = document.getElementById('btn-refrescar');
 
 let resumenes = []; // cache local
 
@@ -33,7 +34,6 @@ function showAlert(message, type = "info", timeout = 4000) {
 function handleFetchError(response) {
     if (!response.ok) {
         return response.text().then(text => {
-            // intenta parsear JSON, si existe
             let msg = text;
             try { const j = JSON.parse(text); msg = j.message || JSON.stringify(j); } catch(e) {}
             throw new Error(`${response.status} ${response.statusText}: ${msg}`);
@@ -81,7 +81,6 @@ function renderTabla() {
     });
 }
 
-/* Escapa HTML simple para evitar XSS desde los datos */
 function escapeHtml(text) {
     if (text == null) return "";
     return text
@@ -90,7 +89,7 @@ function escapeHtml(text) {
         .replace(/>/g, "&gt;");
 }
 
-/* Mostrar info: trae por id y muestra en modal (preserva saltos de línea con <pre>) */
+/* Mostrar info */
 window.showInfo = function(id) {
     fetch(`${API_BASE}/${id}`)
         .then(handleFetchError)
@@ -119,7 +118,11 @@ btnNuevo.addEventListener('click', () => {
     modalEditar.show();
 });
 
-/* Abrir modal para edición: precarga datos */
+btnRefrescar.addEventListener('click', () => {
+    loadResumenes();
+});
+
+/* Abrir modal para editar */
 window.openEdit = function(id) {
     fetch(`${API_BASE}/${id}`)
         .then(handleFetchError)
@@ -137,7 +140,7 @@ window.openEdit = function(id) {
         });
 };
 
-/* Guardar (POST o PUT según si hay id) */
+/* Guardar */
 formEditar.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const id = inputId.value ? Number(inputId.value) : null;
@@ -152,7 +155,6 @@ formEditar.addEventListener('submit', (ev) => {
     }
 
     if (id === null) {
-        // POST
         fetch(API_BASE, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -171,7 +173,6 @@ formEditar.addEventListener('submit', (ev) => {
                 showAlert("Error creando resumen: " + err.message, "danger");
             });
     } else {
-        // PUT
         fetch(`${API_BASE}/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -180,7 +181,6 @@ formEditar.addEventListener('submit', (ev) => {
             .then(handleFetchError)
             .then(r => r.json())
             .then(actualizado => {
-                // actualizar cache local
                 const i = resumenes.findIndex(r => r.id === actualizado.id);
                 if (i >= 0) resumenes[i] = actualizado;
                 renderTabla();
@@ -194,27 +194,48 @@ formEditar.addEventListener('submit', (ev) => {
     }
 });
 
-/* Eliminar */
+/* ⭐ NUEVO deleteResumen con SweetAlert2 — ÚNICO CAMBIO REAL ⭐ */
 window.deleteResumen = function(id) {
-    if (!confirm("¿Deseas eliminar este resumen?")) return;
+    Swal.fire({
+        title: '¿Eliminar resumen?',
+        text: 'Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6'
+    }).then((result) => {
+        if (result.isConfirmed) {
 
-    fetch(`${API_BASE}/${id}`, { method: "DELETE" })
-        .then(response => {
-            if (response.status === 404) {
-                throw new Error("404 Not Found");
-            }
-            if (!response.ok) {
-                return response.text().then(t => { throw new Error(t || response.statusText) });
-            }
-            // actualizar cache
-            resumenes = resumenes.filter(r => r.id !== id);
-            renderTabla();
-            showAlert("Resumen eliminado", "success");
-        })
-        .catch(err => {
-            console.error(err);
-            showAlert("Error eliminando: " + err.message, "danger");
-        });
+            fetch(`${API_BASE}/${id}`, { method: "DELETE" })
+                .then(response => {
+                    if (response.status === 404) throw new Error("404 Not Found");
+                    if (!response.ok) {
+                        return response.text().then(t => { throw new Error(t || response.statusText); });
+                    }
+
+                    resumenes = resumenes.filter(r => r.id !== id);
+                    renderTabla();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Eliminado',
+                        text: 'El resumen ha sido eliminado correctamente.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error eliminando: ' + err.message
+                    });
+                });
+
+        }
+    });
 };
 
 // carga inicial
