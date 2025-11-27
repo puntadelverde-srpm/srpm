@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 @RestControllerAdvice
 public class GlobalExceptionHandler{
 
-    // Un "Logger" para escribir en la consola del servidor (pagina 12 pdf)
+    // Un "Logger" para escribir en la consola del servidor
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**

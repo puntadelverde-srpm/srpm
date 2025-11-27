@@ -14,10 +14,7 @@ import org.srpm.model.Noticia;
 import org.srpm.model.Resumen;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class ResumenService {
@@ -42,20 +39,16 @@ public class ResumenService {
         this.rssParserService = rssParserService;
         this.resumenDAO = resumenDAO;
         this.noticiaDAO = noticiaDAO;
-        // Configuramos el RestTemplate aquí para que esté listo para usarse
         this.restTemplate = restTemplateBuilder
                 .setConnectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                 .setReadTimeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                 .build();
     }
 
-    // =========================================================================
-    // LÓGICA DE NEGOCIO (EL CEREBRO)
-    // =========================================================================
 
     /**
      * Método maestro que coordina todo el proceso de actualización.
-     * Fíjate qué limpio se lee: paso 1, paso 2, paso 3.
+     *
      */
     public void generarYGuardarResumenes() {
         System.out.println("--- [SERVICIO] Iniciando ciclo de actualización ---");
@@ -77,10 +70,8 @@ public class ResumenService {
         guardarResumenesEnBBDD(nuevosResumenes);
     }
 
-    // =========================================================================
-    // MÉTODOS PRIVADOS (HELPER METHODS) - AQUÍ ESTÁ EL 10 EN "CLEAN CODE"
-    // Cada método hace una sola cosa pequeña.
-    // =========================================================================
+
+    // MÉTODOS HELPER
 
     private List<Resumen> obtenerResumenesDeIA(List<Noticia> noticias) {
         System.out.println("Enviando " + noticias.size() + " noticias a la IA...");
@@ -113,9 +104,6 @@ public class ResumenService {
         }
     }
 
-    // =========================================================================
-    // MÉTODOS CRUD (PASARELA)
-    // =========================================================================
 
     public List<Resumen> findAll() {
         return resumenDAO.findAll();
@@ -131,9 +119,7 @@ public class ResumenService {
         return resumen;
     }
 
-    /**
-     * Lógica de actualización: buscar, validar, modificar, guardar.
-     */
+
     public Resumen update(Long id, Resumen resumenNuevosDatos) {
         Resumen existente = findById(id); // Reutilizamos findById que ya lanza la excepción
 
@@ -150,4 +136,16 @@ public class ResumenService {
         }
         resumenDAO.deleteById(id);
     }
-}
+    public void refrescarTodo() {
+        System.out.println("--- [SERVICIO] Ejecutando REFRESCO TOTAL ---");
+
+        // 1. Limpieza total (Borrón)
+        resumenDAO.deleteAll();
+        noticiaDAO.deleteAll();
+        System.out.println("Datos antiguos eliminados.");
+
+        this.generarYGuardarResumenes();
+
+        System.out.println("--- [SERVICIO] Refresco completado ---");
+    }
+ }

@@ -1,4 +1,3 @@
-// resumenes.js
 const API_BASE = "/resumenes";
 const cuerpoTabla = document.getElementById("cuerpo-tabla");
 const alertPlaceholder = document.getElementById("alert-placeholder");
@@ -118,8 +117,45 @@ btnNuevo.addEventListener('click', () => {
     modalEditar.show();
 });
 
+/* ⭐ NUEVO btnRefrescar con Loading de SweetAlert2 ⭐ */
 btnRefrescar.addEventListener('click', () => {
-    loadResumenes();
+
+    // 1. Mostrar pantalla de carga
+    Swal.fire({
+        title: 'Analizando Noticias',
+        html: 'Consultando RSS y generando resúmenes con IA...<br><b>Esto puede tardar unos segundos.</b>',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading(); // Activa el spinner nativo de SweetAlert
+        }
+    });
+
+    // 2. Hacer la petición al backend
+    fetch(API_BASE + '/refresh', { method: "POST" })
+        .then(handleFetchError)
+        .then(() => {
+            // 3. Recargar la tabla
+            return loadResumenes();
+        })
+        .then(() => {
+            // 4. Cerrar loading y mostrar éxito
+            Swal.fire({
+                icon: 'success',
+                title: '¡Actualizado!',
+                text: 'Se han obtenido las últimas noticias correctamente.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            // 5. Mostrar error si falla
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudieron refrescar las noticias: ' + err.message
+            });
+        });
 });
 
 /* Abrir modal para editar */
@@ -194,7 +230,7 @@ formEditar.addEventListener('submit', (ev) => {
     }
 });
 
-/* ⭐ NUEVO deleteResumen con SweetAlert2 — ÚNICO CAMBIO REAL ⭐ */
+/* deleteResumen con SweetAlert2 */
 window.deleteResumen = function(id) {
     Swal.fire({
         title: '¿Eliminar resumen?',

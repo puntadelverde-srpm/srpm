@@ -4,10 +4,7 @@ import org.srpm.model.Noticia;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Interfaz para acceder a los datos de las noticias.
- * Define QUÉ se puede hacer, pero no CÓMO.
- */
+
 public interface NoticiaDAO {
 
     /**
@@ -29,4 +26,6 @@ public interface NoticiaDAO {
      * Busca una noticia por el ID asignado
      */
     Optional<Noticia> findById(Long id);
+
+    void deleteAll();
 }

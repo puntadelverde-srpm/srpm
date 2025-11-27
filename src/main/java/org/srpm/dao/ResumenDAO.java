@@ -23,4 +23,6 @@ public interface ResumenDAO {
      * Busca una noticia por el ID asignado
      */
     Optional<Resumen> findById(Long id);
+
+    void deleteAll();
 }

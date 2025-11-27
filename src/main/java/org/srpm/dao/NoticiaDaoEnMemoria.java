@@ -24,9 +24,7 @@ public class NoticiaDaoEnMemoria implements NoticiaDAO {
 
     @Override
     public void save(Noticia noticia) {
- 
-        // --- ¡¡AQUÍ ESTÁ EL ARREGLO!! ---
-        // Volvemos a comprobar si es '0' (el valor por defecto de 'long')
+
         if (noticia.getId() == 0L) { // 0L es más explícito para tipo 'long'
             noticia.setId(idCounter.getAndIncrement());
         }
@@ -62,5 +60,11 @@ public class NoticiaDaoEnMemoria implements NoticiaDAO {
     @Override
     public Optional<Noticia> findByLinkNoticia(String linkNoticia) {
         return Optional.ofNullable(noticiasPorLink.get(linkNoticia));
+    }
+
+    @Override
+    public void deleteAll() {
+        noticiasPorLink.clear();
+        noticiasPorId.clear();
     }
 }

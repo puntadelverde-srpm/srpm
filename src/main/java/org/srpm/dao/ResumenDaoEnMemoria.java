@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Repository
 public class ResumenDaoEnMemoria implements ResumenDAO{
 
-    // Mapa para buscar por ID (para el nuevo controlador)
+
     private final ConcurrentHashMap<Long, Resumen> resumenPorId = new ConcurrentHashMap<>();
 
     private final AtomicLong idCounter = new AtomicLong(1);
@@ -46,6 +46,12 @@ public class ResumenDaoEnMemoria implements ResumenDAO{
     @Override
     public Optional<Resumen> findById(Long id) {
         return Optional.ofNullable(resumenPorId.get(id));
+    }
+
+    @Override
+    public void deleteAll() {
+        resumenPorId.clear();
+        idCounter.set(1);
     }
 
 }

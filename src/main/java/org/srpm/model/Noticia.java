@@ -5,16 +5,14 @@ import java.time.LocalDateTime;
 public class Noticia {
 
     private long id;
-    private String fuente; // "COPE" o "20minutos"
+    private String fuente; // "COPE" o "20minutos
     private String titular;
     private String linkNoticia;
-    private String contenido; // El resumen (<description> o <content>)
+    private String contenido; // (<description> o <content>)
     private LocalDateTime fecha;
 
 
     public Noticia() {}
-
-    // --- Getters y Setters para todos los campos ---
 
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }

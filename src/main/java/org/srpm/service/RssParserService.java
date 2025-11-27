@@ -17,9 +17,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
- * @Service indica a Spring que esta clase es un "Servicio".
- */
+
 @Service
 public class RssParserService {
 
@@ -45,22 +43,13 @@ public class RssParserService {
     //Record para FeedSource
     private record FeedSource(String nombre, String url) { }
 
-    /**
-     * Constructor: Spring nos da el NoticiaDAO.
-     * Ya no le pedimos las URLs aquí, porque era demasiado pronto.
-     */
+
     @Autowired
     public RssParserService(NoticiaDAO noticiaDAO) {
         this.noticiaDAO = noticiaDAO;
         System.out.println(": RssParserService CONSTRUIDO. Las URLs aún son null.");
     }
 
-    /**
-     * @PostConstruct le dice a Spring: "Espera a que hayas inyectado TODOS
-     * los valores (como las URLs del @Value), y SÓLO ENTONCES, ejecuta este método".
-     * Esto asegura que 'url20Minutos' y las demás YA TIENEN VALOR
-     * y no son 'null' cuando creamos la lista 'feeds'.
-     */
     @PostConstruct
     public void inicializarFuentes() {
         System.out.println("============================================================");

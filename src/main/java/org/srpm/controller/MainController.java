@@ -3,6 +3,7 @@ package org.srpm.controller;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.srpm.model.Resumen;
 import org.srpm.service.ResumenService;
@@ -20,13 +21,16 @@ public class MainController {
         this.resumenService = resumenService;
     }
 
-    /**
-     * @PostConstruct ahora es ultra simple.
-     * Solo le da la orden al servicio: "Arranca".
-     */
+
     @PostConstruct
     public void init() {
         resumenService.generarYGuardarResumenes();
+    }
+
+    @PostMapping("/refresh")
+    @ResponseStatus(HttpStatus.OK) // Devuelve 200 OK cuando termina
+    public void refrescar() {
+        resumenService.refrescarTodo();
     }
 
     // --- ENDPOINTS HTTP ---
